@@ -1,4 +1,4 @@
-#! /bin/bas
+#! /bin/bash
 
-python grpc_client.py &
+python auto_exploit.py &
 python revsh.py
